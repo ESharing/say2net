@@ -1,0 +1,163 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta name="kaazing:postMessage" content="immediate" >
+
+    <link rel="shortcut icon" href="http://www.kaazing.com/images/favicon.ico" />
+    <link rel="stylesheet" href="resources/css/demo.css" />
+
+    <title>Kaazing - PostMessage Demonstration</title>
+
+    <script src="/html5/PostMessage.js"></script>
+    <style>
+       body {overflow:none; font-family:Helvetica,Arial,sans-serif;}
+       iframe { width: 470px; height: 260px ; border: none;}
+       div#iframes { margin-left: 13px }
+       fieldset { width: 400px; }
+       fieldset select { display:block; float:left; width:220px; margin-right:20px; }
+       fieldset input { display:block; float:left; width:220px; margin-right:20px; }
+       fieldset label { display:block; float:left; margin-right:10px; text-align:right; width:120px; font-weight:normal; }
+       div#log { display:block; width: 400px; height:115px; margin-top: 5px; overflow:auto; }
+    </style>
+
+    <script>
+        function setup() {
+            var output = document.getElementById("output")
+
+            var url = document.getElementById("url");
+            var go = document.getElementById("go");
+
+            var iframes = document.getElementById("iframes");
+            var destination = document.getElementById("destination");
+            var origin = document.getElementById("origin");
+            var message = document.getElementById("message");
+
+            var send = document.getElementById("send");
+            var clear = document.getElementById("clear");
+
+            // populate origin
+            origin.value = location.protocol + "//" + location.host;
+
+            // dynamically construct destination options
+            var sameIFrame = document.getElementById("sameOrigin");
+            sameIFrame.src = location.href.replace(".html", "Child.html");
+
+            var sameScheme = location.protocol.substring(0, location.protocol.length-1);
+            var sameHost = location.host;
+            var crossHost = sameHost.indexOf(":8000") != -1 ? sameHost.replace(":8000", ":9000") : sameHost.replace(":9000", ":8000");
+            var crossHost = crossHost.indexOf("www.") != -1 ? crossHost.replace("www.local.net", "secure.remote.net") : crossHost.replace("secure.remote.net", "www.local.net");
+            var crossScheme = (sameScheme == "http") ? "https" : "http";
+            var crossIFrame = document.getElementById("crossOrigin");
+            var crossIFrameURL = crossScheme + "://" + crossHost + location.pathname.replace(".html", "Child.html");
+            crossIFrame.src = crossIFrameURL;
+            
+            // triggering the proactive bridge from parent to child too early
+            // causes problems in WebKit (both Safari and Chrome)
+            setTimeout(function() {
+	            sameIFrame.style["KaaPostMessage"] = "immediate";
+	            crossIFrame.style["KaaPostMessage"] = "immediate";
+            }, 1000);
+            
+			// clear the log output
+            clear.onclick = function() {
+            	while (output.lastChild) {
+            		output.removeChild(output.lastChild);
+            	}
+            }
+
+            // whenever the Send button is pressed, post a message to the currently
+            // selected destination (either this iframe, or one of the child iframes)
+            send.onclick = function() {
+                postMessage0(eval(destination.value), message.value, "*");
+            }
+            
+            // listen for messages posted from either this parent frame, or one of
+            // the child iframes
+            window.addEventListener("message", function(event) {
+                var text = document.createTextNode("[" + event.origin + "] " + event.data + "\r\n");
+                output.insertBefore(text, output.firstChild);
+            }, false);
+        }
+    </script>
+</head>
+<body onload="setup()" >
+    <div id="overall_frame">
+        <div id="sidebar">
+        </div>
+
+    <div id="wrapper">
+
+        <div id="header">
+            <div id="menu">
+                <a href="index.html">Demos:</a>
+                <a href="stomp.html">JavaScript Stomp</a>
+                <a href="stock.html">Stock Trading</a>
+                <a href="xmpp.html">XMPP Chat</a>
+                <a href="sse.html">Server-Sent Events</a>
+                <a href="postMessage.html">PostMessage</a>
+            </div>
+        </div>
+    <div id="content">
+        <div id="iframes" >
+            <iframe id="sameOrigin" name="sameOrigin" ></iframe>
+            <iframe id="crossOrigin" name="crossOrigin" ></iframe>
+        </div>
+
+        <div id="main">
+        <form>
+            <fieldset>
+                <legend>Post Message - Parent Window</legend>
+                <label for="origin" >Origin</label>
+                <input id="origin" readonly >
+                <label for="destination" >Destination</label>
+                <select id="destination" >
+                    <option value="self">self</option>
+                    <option value="frames['sameOrigin']" >frames['sameOrigin']</option>
+                    <option value="frames['crossOrigin']" >frames['crossOrigin']</option>
+                </select>
+
+                <label for="message" >Message</label>
+                <input id="message" value="Hello, world">
+                
+                <button type="button" id="clear" >Clear</button>
+                <button type="button" id="send" >Send</button>
+                <div id="log">
+                   <pre id="output" ></pre>
+                </div>
+            </fieldset>
+        </form>
+        </div>
+    </div>
+
+    </div>
+    </div>
+</body>
+</html>

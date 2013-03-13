@@ -1,0 +1,97 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+    <link rel="shortcut icon" href="http://www.kaazing.com/images/favicon.ico" />
+    <link rel="stylesheet" href="resources/css/demo.css" />
+
+    <title>Kaazing - XMLHttpRequest Demonstration</title>
+
+    <script src="/html5/XMLHttpRequest.js"></script>
+    <script>
+        function setup() {
+            var console = document.getElementById("console")
+
+            var log = function(message) {
+              var pre = document.createElement("pre");
+              pre.innerHTML = message;
+              console.insertBefore(pre, console.firstChild);
+              while (console.childNodes.length > 500)
+              {
+                console.removeChild(console.lastChild);
+              }
+            }
+
+            var url = document.getElementById("url");
+            var go = document.getElementById("go");
+            var clear = document.getElementById("clear");
+
+            go.onclick = function() {
+                var location = url.value;
+                var xhr = new XMLHttpRequest0();
+                xhr.open("GET", location, true);
+                xhr.onload = function() {
+                    log("readyState: " + xhr.readyState);
+                    if (xhr.status != 0) {
+                        log("status: " + xhr.status);
+                        log("statusText: " + xhr.statusText);
+	                    log("responseText: " + xhr.responseText.length);
+                        log("Content-Type: " + xhr.getResponseHeader("Content-Type"));
+                        log("Last-Modified: " + xhr.getResponseHeader("Last-Modified"));
+	                }
+                }
+                xhr.send("");
+            }
+            
+            clear.onclick = function() {
+              while (console.childNodes.length > 0)
+              {
+                console.removeChild(console.lastChild);
+              }
+            }
+            
+            url.value = "https://localhost:9000" + location.pathname;
+        }
+    </script>
+</head>
+<body onload="setup()" >
+    <div id="content">
+        <div id="main">
+            <div>
+              <label style="width:10em;">Location</label><input id="url" style="width:30em;" >
+              <button id="go">Go</button>
+              <button id="clear">Clear</button>
+            </div>
+            <div id="console" style="width:40em;height:25em;" ></div>
+        </div>
+    </div>
+</body>
+</html>

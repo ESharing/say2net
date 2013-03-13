@@ -1,0 +1,203 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+
+
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+	<link rel="shortcut icon" href="http://www.kaazing.com/images/favicon.ico" />
+    <link rel="stylesheet" href="resources/css/demo.css" />
+
+	<title>Kaazing - Stomp Client Demonstration</title>
+
+    <script src="/html5/ByteSocket.js"></script>
+    <script src="/protocol/StompClient.js"></script>
+    <script>
+        function setup() {
+            // detect explicit host:port authority
+            var authority = location.host;
+            if (location.search) {
+                authority = location.search.slice(1) + "." + authority;
+            }
+            else {
+                var parts = authority.split(':');
+                var ports = { http:'80', https:'443' };
+                authority = parts[0] + ':' + (parseInt(parts[1] || ports[location.protocol]) + 1);
+            }
+
+            var console = document.getElementById("console")
+
+            var log = function(message) {
+              var pre = document.createElement("pre");
+              pre.innerHTML = message;
+              console.insertBefore(pre, console.firstChild);
+              while (console.childNodes.length > 500)
+              {
+                console.removeChild(console.lastChild);
+              }
+            }
+            var url = document.getElementById("url");
+
+            var username = document.getElementById("username");
+            var password = document.getElementById("password");
+            var connect = document.getElementById("connect");
+            var disconnect = document.getElementById("disconnect");
+
+            var destination = document.getElementById("destination");
+            var message = document.getElementById("message");
+            var subscribe = document.getElementById("subscribe");
+            var send = document.getElementById("send");
+            var unsubscribe = document.getElementById("unsubscribe");
+
+            var transaction = document.getElementById("transaction");
+            var txSend = document.getElementById("txSend");
+            var txDestination = document.getElementById("txDestination");
+            var txMessage = document.getElementById("txMessage");
+
+            var begin = document.getElementById("begin");
+            var commit = document.getElementById("commit");
+            var abort = document.getElementById("abort");
+
+            connect.onclick = function() { log("CONNECT: " + url.value + " " + username.value);
+                                           stomp.connect(url.value, {username:username.value, password:password.value});
+                                           connect.disabled = "disabled"; }
+            disconnect.onclick = function() { log("DISCONNECT");
+                                              stomp.disconnect();
+                                              disconnect.disabled = "disabled"; }
+
+            subscribe.onclick = function() { log("SUBSCRIBE: " + destination.value);
+                                             stomp.subscribe(destination.value); };
+            send.onclick = function() { log("SEND: " + message.value + " " + destination.value);
+                                        stomp.send(message.value, destination.value); };
+            unsubscribe.onclick = function() { log("UNSUBSCRIBE: " + destination.value);
+                                               stomp.unsubscribe(destination.value); };
+
+            begin.onclick = function() { log("BEGIN: " + transaction.value);
+                                         stomp.begin(transaction.value); };
+            txSend.onclick = function() { log("SEND: " + txMessage.value + " " + txDestination.value + " " + transaction.value);
+                                          stomp.send(txMessage.value, txDestination.value, transaction.value); };
+            commit.onclick = function() { log("COMMIT: " + transaction.value);
+                                          stomp.commit(transaction.value); };
+            abort.onclick = function() { log("ABORT: " + transaction.value);
+                                         stomp.abort(transaction.value); };
+
+            var stomp = new StompClient();
+            stomp.onopen = function(headers) { log("CONNECTED: " + headers["session"]);
+                                               disconnect.disabled = null; }
+            stomp.onmessage = function(headers, body) { log("MESSAGE: " + body); }
+            stomp.onreceipt = function(headers) { log("RECEIPT: " + headers["receipt-id"]); }
+            stomp.onerror = function(headers, body) { log("ERROR: " + body); }
+            stomp.onclosed = function(headers) { log("DISCONNECTED");
+                                                 connect.disabled = null; disconnect.disabled = "disabled"; }
+
+            // default the location
+            var authority = location.host;
+            if (location.search) {
+                authority = location.search.slice(1) + "." + authority;
+            }
+            else {
+                var parts = authority.split(':');
+                var ports = { "http:":'80', "https:":'443' };
+                authority = parts[0] + ':' + (parseInt(parts[1] || ports[location.protocol]) + 1);
+            }
+            url.value = location.protocol.replace("http", "ws") + "//" + authority + "/activemq";
+
+            // initialize the disabled states
+            connect.disabled = null;
+            disconnect.disabled = "disabled";
+        }
+
+    </script>
+</head>
+<body onLoad="setup()" >
+
+<div id="overall_frame">
+	<div id="sidebar">
+	</div>
+	<div id="wrapper">
+
+        <div id="header">
+            <div id="menu">
+                <a href="index.html">Demos:</a>
+                <a href="stomp.html">JavaScript Stomp</a>
+                <a href="stock.html">Stock Trading</a>
+                <a href="xmpp.html">XMPP Chat</a>
+                <a href="sse.html">Server-Sent Events</a>
+                <a href="postMessage.html">PostMessage</a>
+            </div>
+        </div>
+		<div id="content">
+          <div id="main">
+              <div id="main_header">
+              <h4>Simple Stomp Demo Using Apache ActiveMQ</h4>
+              <span class="info">This is a simple Stomp demo that illustrates the use of the Kaazing Gateway, Apache ActiveMQ, HTML 5
+                                         Web sockets and Server-sent events, and an API-specific JavaScript library implementation of the Stomp
+                                 protocol. Refer to the <a href="stomp-demo-instructions.html"> demo instructions</a> for more information.</span>              </div>
+            <div id="login_div">
+              <span class="info">No password or username required. Just connect!</span>
+
+              <label>Location</label><input id="url" size="25" ><br/>
+              <label>User Name</label><input id="username" size="25"><br/>
+              <label>Password</label><input type="password" id="password" size="25"><br/>
+
+              <button id="connect" >Connect</button>
+              <button id="disconnect" >Disconnect</button>
+            </div>
+            <div id="subscribe_div">
+              <span class="info">Subscribe, send messages, and unsubscribe to a particular destination.</span>
+              <label>Destination</label><input id="destination" size="25" value="/topic/destination"><br/>
+              <label>Message</label><input id="message" size="25" value="Hello, message"><br/>
+
+              <button id="subscribe" >Subscribe</button>
+              <button id="send" >Send</button>
+              <button id="unsubscribe" >Unsubscribe</button>
+            </div>
+            <div id="transaction_div">
+              <span class="info">Begin, send messages to, and commit or abort a transaction. Subscribe to see committed transactions.</span>
+
+              <label>Transaction</label><input id="transaction" size="25" value="transaction#1"><br/>
+              <label>Destination</label><input id="txDestination" size="25" value="/topic/destination"><br/>
+              <label>Message</label><input id="txMessage" size="25" value="Hello, transaction"><br/>
+
+              <button id="begin">Begin</button>
+              <button id="txSend" >Send</button>
+              <button id="commit">Commit</button>
+              <button id="abort">Abort</button>
+            </div>
+            <div id="console_div">
+                <span class="info">Messages are delivered to this log window. Received an error message?  <a href="stomp-demo-instructions.html#error">Click here!</a></span>
+                <div id="console"></div>
+            </div>
+		</div>
+		</div>
+    	</div>
+    </div>
+</body>
+</html>

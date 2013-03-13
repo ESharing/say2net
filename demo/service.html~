@@ -1,0 +1,121 @@
+﻿<html>
+<head>
+
+<link href="common.css" rel="stylesheet" type="text/css">
+<script type="text/javascript"  src="service.js"></script>
+<script type="text/javascript"  src="common.js"></script>
+<script type="text/javascript"  src="json2.js"></script>
+<script type="text/javascript" src="history_cmd.js"></script>
+
+<link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/fonts/fonts-min.css" />
+<link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/paginator/assets/skins/sam/paginator.css" />
+<link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/button/assets/skins/sam/button.css" />
+<link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/datatable/assets/skins/sam/datatable.css" />
+<script type="text/javascript"
+      src="../jslib/yui2.8build/yahoo-dom-event/yahoo-dom-event.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/element/element-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/paginator/paginator-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/button/button-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/dragdrop/dragdrop-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/datasource/datasource-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/datatable/datatable-min.js"
+      xml:space="preserve">
+</script>
+
+<style type="text/css"
+       xml:space="preserve">
+/*<![CDATA[*/
+/* Class for marked rows */
+.yui-skin-sam .yui-dt tr.mark,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc {
+    background-color: red;
+    color: black;
+}
+
+.yui-skin-sam .yui-dt tr.mark2,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc {
+    background-color: yellow;
+    color: black;
+}
+/*]]>*/
+  
+</style>
+
+<style type="text/css">
+    #ServiceTable {
+position:fixed;
+left:5px;  	
+        text-align: left;
+    }
+    #ServiceTable table {
+        margin-left:auto; margin-right:auto;
+    }
+    #ServiceTable, #ServiceTable .yui-dt-loading {
+        text-align: left; background-color: transparent;
+    }
+    
+#yui-dt0-paginator0 {
+    display:none;
+}
+</style>
+
+</head>
+<body class="yui-skin-sam">
+<div id="head">
+<a href="service.html" target="_blank">服务</a>
+<a href="topo.html" target="_blank">拓扑</a>
+<a href="fault.html"  target="_blank">告警</a>
+<a href="perf.html" target="_blank">性能</a>
+<a href="config.html" target="_blank">配置</a>
+<a href="inventory.html" target="_blank">资源</a>
+</div>
+
+<div id="input">
+<input id="cmdInput" type="text" size="130" maxlength="100" name="inputStr" value="Input Sth."/>
+<div class="output" id="output"/>
+</div>
+
+</div>
+</div>
+
+<div id="ServiceTable">
+</div>
+<script type="text/javascript">
+init();
+
+document.title="Service";
+</script>
+</body>
+</html>

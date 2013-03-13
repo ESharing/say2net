@@ -1,0 +1,278 @@
+﻿<html>
+<head>
+
+<link href="common.css" rel="stylesheet" type="text/css">
+<script type="text/javascript"  src="common.js"></script>
+<script type="text/javascript"  src="json2.js"></script>
+<script type="text/javascript" src="history_cmd.js"></script>
+
+    <!--link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/fonts/fonts-min.css" /-->
+    <link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/paginator/assets/skins/sam/paginator.css" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/button/assets/skins/sam/button.css" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="../jslib/yui2.8build/datatable/assets/skins/sam/datatable.css" />
+<script type="text/javascript"
+      src="../jslib/yui2.8build/yahoo-dom-event/yahoo-dom-event.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/element/element-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/paginator/paginator-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/button/button-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/dragdrop/dragdrop-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/datasource/datasource-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../jslib/yui2.8build/datatable/datatable-min.js"
+      xml:space="preserve">
+</script>
+<style type="text/css"
+       xml:space="preserve">
+/*<![CDATA[*/
+/* Class for marked rows */
+.yui-skin-sam .yui-dt tr.mark,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc {
+    background-color: red;
+    color: black;
+}
+
+.yui-skin-sam .yui-dt tr.mark2,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc {
+    background-color: yellow;
+    color: black;
+}
+/*]]>*/
+  
+</style>
+
+<style type="text/css">
+    #alarmTable {
+position:fixed;
+left:5px;  	
+        text-align: left;
+    }
+    #alarmTable table {
+        margin-left:auto; margin-right:auto;
+    }
+    #alarmTable, #alarmTable .yui-dt-loading {
+        text-align: left; background-color: transparent;
+    }
+    
+#yui-dt0-paginator0 {
+    display:none;
+}
+    
+</style>
+
+</head>
+<body class="yui-skin-sam">
+<div id="head">
+<a href="service.html" name="link" target="_blank">业务</a>
+<a href="topo.html"  name="link" target="_blank">拓扑</a>
+<a href="fault.html"   name="link" target="_blank">告警</a>
+<a href="perf.html"  name="link"  target="_blank">性能</a>
+<a href="config.html"  name="link" target="_blank">配置</a>
+<a href="inventory.html"  name="link" target="_blank">资源</a>
+</div>
+
+<div id="input">
+<input id="cmdInput" type="text" size="130" maxlength="100" name="inputStr" value="Input Sth."/>
+
+<div class="output" id="output"/>
+   
+</div>
+
+</div>
+</div>
+
+<div id="alarmTable">
+</div>
+
+<input id="currentInfo" type="hidden"/>
+
+<script type="text/javascript">
+init();
+document.title="Fault";
+document.getElementById("currentInfo").value="Global";
+
+
+var Dom = YAHOO.util.Dom;
+var Event = YAHOO.util.Event;
+markRecs1 = {};
+markRecs2 = {};
+markRecs3 = {};
+markRecs4 = {};
+
+var CYCLETIME = 5000;
+var MAXRECORDNUM = 1000;
+var cycleTimer;
+var cycleTimerOn = false;
+var cycleShowRadio, realtimeRadio;
+var records;
+var currentNum = 0;
+
+//cycleShowRadio = document.getElementById("monitor_1min");
+//realtimeRadio = document.getElementById("monitor_realtime");
+records = new Array();
+
+//allocate the max records size
+for(var i=0; i<MAXRECORDNUM; i++) {
+	records[i] = new Array(3);
+}
+
+//////YUI Table
+YAHOO.widget.DataTable.formatMe = function(el, oRecord, oColumn, oData) {
+switch (oData) {
+	case "0": //critical
+	 el.innerHTML = "<img src='lampRed16.png'/>";
+	 break; 
+	case "1": // Major
+	 el.innerHTML = "<img src='lampPink16.png'/>";
+	 break;
+	case "2": // Minor
+	 el.innerHTML = "<img src='lampYellow16.png'/>";
+	 break;
+	case "3": // Warning
+	 el.innerHTML = "<img src='lampTea16.png'/>";
+	 break;
+
+	 }
+}
+
+var myColumnDefs = [
+	{key:"Level", label:'', formatter:YAHOO.widget.DataTable.formatMe},
+    {key:"When",minWidth:200, sortable:true},
+    {key:"Where",minWidth:300,resizeable:true, sortable:true},
+    {key:"What",minWidth:500,resizeable:true, sortable:true},
+	{key:"Severity", sortable:true}
+];
+var globalDataCount=1;
+var myDataSource = new YAHOO.util.DataSource([]);
+myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+myDataSource.responseSchema = {
+    fields: ["Level","When","Where","What","Severity"]
+};
+
+var oConfigs = { 
+        paginator: new YAHOO.widget.Paginator({ 
+            rowsPerPage: 10
+        })          }; 
+
+var myDataTable = new YAHOO.widget.DataTable("alarmTable",
+        myColumnDefs, myDataSource, oConfigs);          
+
+        // Subscribe to events for row selection
+        myDataTable.subscribe("rowMouseoverEvent", myDataTable.onEventHighlightRow);
+        myDataTable.subscribe("rowMouseoutEvent", myDataTable.onEventUnhighlightRow);
+        myDataTable.subscribe("rowClickEvent", myDataTable.onEventSelectRow);		
+//////
+
+function cycleShow() {
+	// display the stored records
+	for(var i=0;i<currentNum;i++)
+	{
+		var level = records[i]["Level"];
+		var when = records[i]["When"];
+		var where = records[i]["Where"];
+		var what = records[i]["What"];
+		var severity = records[i]["Severity"];
+		
+		myDataTable.addRow({Level:level, When:when, Where:where, What:what, Severity:severity}, 0 );  	
+	}
+
+
+	//the last
+	currentNum = 0;
+	cycleTimer = setTimeout("cycleShow()", CYCLETIME);
+}
+/*
+cycleShowRadio.onclick = function() {
+	if (cycleShowRadio.checked) {
+		if(!cycleTimerOn) {
+			cycleTimerOn = true;
+			cycleShow();
+		}
+	}
+	else {
+		cycleTimerOn = false;
+		clearTimeout(cycleTimer);
+	}
+}
+*/
+
+    // if user is running mozilla then use it's built-in WebSocket
+    window.WebSocket = window.WebSocket || window.MozWebSocket;
+
+    // if browser doesn't support WebSocket, just show some notification and exit
+    if (!window.WebSocket) {
+        alert($('<p>', { text: 'Sorry, but your browser doesn\'t '
+                                    + 'support WebSockets.'} ));
+        exit;
+    }
+
+  var host = "ws://localhost:6666";
+  var socket;
+  socket = new WebSocket(host);
+
+var stockRowIndexes = {};
+var debugCount=1;
+
+socket.onmessage = function(msg) {
+var fields = msg.data.split('~');
+var level = fields[0];
+var when = fields[1];
+var where  = fields[2];
+var what   = fields[3];
+var severity   = fields[4];
+	
+	/*
+if(cycleShowRadio.checked) {
+	records[currentNum]["Level"] = level;
+	records[currentNum]["When"] = when;
+	records[currentNum]["Where"] = where;
+	records[currentNum]["What"] = what;
+	records[currentNum]["Severity"] = severity;
+	currentNum ++;
+}else {
+	myDataTable.addRow({Level:level, When:when, Where:where, What:what, Severity:severity}, 0 );  	
+}
+*/
+	myDataTable.addRow({Level:level, When:when, Where:where, What:what, Severity:severity}, 0 );  	  
+};
+
+/*
+disconnect.onclick = function() {
+  socket.close();
+  socket=null;
+}
+*/
+//socket.send('hello');
+</script>
+</body>
+</html>

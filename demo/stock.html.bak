@@ -1,0 +1,205 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+        <link rel="shortcut icon" href="http://www.kaazing.com/images/favicon.ico" >
+
+        <title>Kaazing - Stock Ticker Demonstration</title>
+        <link rel="stylesheet" href="resources/css/demo.css">
+
+        <!--  Kaazing scripts -->
+	    <script src="/html5/ByteSocket.js"></script>
+	    <script src="/protocol/StompClient.js"></script>
+
+        <script type="text/javascript">
+        function setup() {
+
+            var stockTable = document.getElementById("stockTable");
+            var stockRowIndexes = {};
+
+            var stomp = new StompClient();
+
+            stomp.onopen = function(headers) {
+                stomp.subscribe("/topic/stock", null);
+            }
+
+            stomp.onreceipt = function(headers) { }
+
+            stomp.onmessage = function(headers, body) {
+
+              // extract the stock data fields
+              var fields = body.split(':');
+              var company = fields[0];
+              var ticker  = fields[1];
+              var price   = fields[2];
+				
+				//sort by ticker, insert the current row to correct entry
+				
+              // lookup the table row
+              var stockRowIndex = stockRowIndexes[ticker];
+              var stockRow = stockTable.rows[stockRowIndex];
+
+              // lazily populate the table row, with 5 cells
+              if (stockRow === undefined) {
+                var stockRowIndex = stockTable.rows.length;
+                stockRow = stockTable.insertRow(stockRowIndex);
+                for (var cell=0; cell < 5; cell++) {
+                    stockRow.insertCell(cell);
+                }
+                stockRow.cells[0].className = 'company';
+                stockRow.cells[1].className = 'ticker';
+                stockRow.cells[2].className = 'price';
+                stockRow.cells[3].className = 'change';
+                stockRow.cells[4].className = 'percent';
+                stockRowIndexes[ticker] = stockRowIndex;
+              }
+
+              // detect price change
+              var oldPrice = Number(stockRow.cells[2].innerHTML);
+              var oldChange = Number(stockRow.cells[3].innerHTML);
+              var change = ((oldPrice != 0) ? (price - oldPrice) : 0).toFixed(2);
+              var percent = ((oldPrice != 0) ? (change / oldPrice * 100) : 0).toFixed(1);
+
+              // update the table row cell data
+              stockRow.cells[0].innerHTML = company;
+              stockRow.cells[1].innerHTML = ticker;
+              stockRow.cells[2].innerHTML = price;
+              stockRow.cells[3].innerHTML = change;
+              stockRow.cells[4].innerHTML = percent;
+
+              // update the table row cell styles
+              var oldSign = (oldChange != 0) ? oldChange / Math.abs(oldChange) : 0;
+              var sign = (change != 0) ? change / Math.abs(change) : 0;
+              if (sign != oldSign) {
+                switch (sign) {
+                case 1:
+                    stockRow.cells[3].className = 'upChange';
+                    stockRow.cells[4].className = 'upPercent';
+                    break;
+                case -1:
+                    stockRow.cells[3].className = 'downChange';
+                    stockRow.cells[4].className = 'downPercent';
+                    break;
+                }
+              }
+			  
+            }
+
+            stomp.onerror = function(headers, body) {}
+            stomp.onclosed = function(headers) {}
+
+            var url = document.getElementById("url");
+
+            var username = document.getElementById("username");
+            var password = document.getElementById("password");
+            var connect = document.getElementById("connect");
+            var disconnect = document.getElementById("disconnect");
+
+            connect.onclick = function() {
+				stomp.connect(url.value, {username:username.value, password:password.value});
+			}
+            disconnect.onclick = function() {
+    			stomp.disconnect();
+			}
+
+            // default the location
+            var authority = location.host;
+            if (location.search) {
+                authority = location.search.slice(1) + "." + authority;
+            }
+            else {
+                var parts = authority.split(':');
+                var ports = { "http:":'80', "https:":'443' };
+                authority = parts[0] + ':' + (parseInt(parts[1] || ports[location.protocol]) + 1);
+            }
+            url.value = location.protocol.replace("http", "ws") + "//" + authority + "/activemq";
+        }
+    </script>
+
+</head>
+<body onload="setup()" >
+    <div id="overall_frame">
+        <div id="sidebar">
+        </div>
+        <div id="wrapper">
+
+        <div id="header">
+            <div id="menu">
+                <a href="index.html">Demos:</a>
+                <a href="stomp.html">JavaScript Stomp</a>
+                <a href="stock.html">Stock Trading</a>
+                <a href="xmpp.html">XMPP Chat</a>
+                <a href="sse.html">Server-Sent Events</a>
+                <a href="postMessage.html">PostMessage</a>
+            </div>
+        </div>
+            <div id="content">
+                    <div id="main">
+                    <div id="table_header">
+                        <h4>Stock Trading Table Using Apache ActiveMQ</h4>
+                        <span class="info">This demo shows the ability for a web page to integrate a constant stream of data from
+                        a JMS server using the Stomp protocol. To view this demo, Apache ActiveMQ, the Kaazing Gateway, and the "stock.start"
+                        script must all be running. Connect to the Apache ActiveMQ server using the "Connect" button below. Refer to
+                        the <a href="../documentation/getting-started.html">Getting Started Guide</a> for more information.</span>
+
+                                                <script>
+                        </script>
+
+                        <table id="stockTable" class="stockTable" cellSpacing="0" >
+                            <thead>
+                                <tr>
+                                    <th class="company" width="60%">Company</th>
+                                    <th class="ticker" width="100px">Ticker</th>
+                                    <th class="price" width="120px">Price</th>
+                                    <th class="change" width="120px">Change</th>
+                                    <th class="percent" width="120px">% Change</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                        <br>
+                          <span class="info">No password or username required. Just connect!</span>
+
+                          <div id="login_div">
+	                          <label>Location</label><input id="url" size="25" ><br/>
+	                          <label>User Name</label><input id="username" size="25"><br/>
+	                          <label>Password</label><input type="password" id="password" size="25">
+                          </div>
+                          <div>
+                              <button id="connect" >Connect</button>
+                              <button id="disconnect" >Disconnect</button>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+</body>
+</html>
+

@@ -1,0 +1,130 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+
+
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+    <title>Kaazing - Echo Service Demonstration</title>
+
+    <script src="/html5/WebSocket.js"></script>
+    <script>
+        function setup() {
+            // detect explicit host:port authority
+            var authority = location.host;
+            var connected = false;
+            var websocket;
+            if (location.search) {
+                authority = location.search.slice(1) + "." + authority;
+            }
+            else {
+                var parts = authority.split(':');
+                var ports = { http:'80', https:'443' };
+                authority = parts[0] + ':' + (parseInt(parts[1] || ports[location.protocol]) + 5);
+            }
+
+            var console = document.getElementById("console")
+
+            var url = document.getElementById("url");
+            url.value = location.protocol.replace("http", "ws") + "//" + authority + "/echo";
+            var txMessage = document.getElementById("txMessage");
+
+            var txSend = document.getElementById("txSend");
+
+            var log = function(message) {
+              var pre = document.createElement("pre");
+              pre.innerHTML = message;
+              console.insertBefore(pre, console.firstChild);
+              while (console.childNodes.length > 500)
+              {
+                console.removeChild(console.lastChild);
+              }
+            }
+
+            function connect()
+            {
+                websocket = new WebSocket(url.value); 
+                websocket.onmessage = function(evt) { 
+                      log("MESSAGE: " + evt.data); 
+                }
+                websocket.onclosed = function(evt) { 
+                    log("DISCONNECTED"); 
+                }
+                connected = true;
+                websocket.onopen = function(evt) { 
+                    websocket.postMessage("123Test456"); 
+                };
+            }
+            connect();
+
+            txSend.onclick = function() { 
+                if (connected == false)
+                {
+                    connect();
+                }
+                else
+                {
+                     websocket.postMessage(txMessage.value);
+                }
+            }
+
+
+            
+        }
+
+
+    </script>
+</head>
+<body onLoad="setup()" >
+
+<div id="echo_frame">
+    <div id="wrapper">
+        <div id="content">
+          <div id="main">
+              <div id="main_header">
+              <h4>Simple Echo Client for WebSockets</h4>
+            </div>
+            <div id="connect_div">
+              <label>Location</label><input id="url" size="25" ><br/>
+            </div>
+            <div id="message_div">
+              <span class="info">Messages to be sent to the server</span>
+              <label>Message</label><input id="txMessage" size="25" value="Hello, WebSockets!"><br/>
+              <button id="txSend" >Send</button>
+            </div>
+            <div id="console_div">
+                <div id="console"></div>
+            </div>
+        </div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>

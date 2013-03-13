@@ -1,0 +1,60 @@
+﻿<html>
+<head>
+<script type="text/javascript"  src="../jslib/raphael1_5.js"></script>
+</head>
+<body>
+<div id="paper">
+<div id="status"></div>
+</div>
+<script type="text/javascript">
+var start = function () {
+    // storing original coordinates
+	switch (this.type) {
+	case "circle":
+		this.ox = this.attr("cx");
+		this.oy = this.attr("cy");
+		break;
+	case "rect":
+		this.ox = this.attr("x");
+		this.oy = this.attr("y");
+		
+		text.ox = this.attr("x");
+		text.oy = this.attr("y");
+		
+		break;
+	default:
+		;
+	}	
+    this.attr({opacity: 1});
+},
+move = function (dx, dy) {
+    // move will be called with dx and dy
+	switch (this.type) {
+	case "circle":
+		this.attr({cx: this.ox + dx, cy: this.oy + dy});
+		break;
+	case "rect":
+		this.attr({x: this.ox + dx, y: this.oy + dy});
+		text.attr({x: this.ox + dx, y: this.oy + dy});
+		break;		
+	default:
+	   this.attr({x: this.ox + dx, y: this.oy + dy});
+		;
+	}
+},
+up = function () {
+    // restoring state
+    this.attr({opacity: .5});
+};
+
+
+var paper = Raphael("paper", 600,600);
+var rect = paper.rect(100,100,20,20).attr({fill: "#fff", opacity:.5,cursor: "move"});
+var text = paper.text(90,130,"weiweiweiweiweiwei");
+
+rect.drag(move,start,up);
+
+
+</script>
+</body>
+</html>

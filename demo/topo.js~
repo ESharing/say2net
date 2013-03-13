@@ -1,0 +1,371 @@
+﻿var TerminalSize = 15;
+var NodeSize = 20;
+var ConnectorSize=8;
+var LABEL_ON=new Boolean(true);
+var LabelObjects = {};
+var NEObjects = {}; // label map to node, hold total node 
+var LinkObjs = {};
+var NodeNum = 0; // topo node count
+var NEs;
+//drag & drop fun: start, move, up
+var start = function () {
+    // storing original coordinates
+	// consider selected nodes to move multiple nodes
+	// use the key saved in node attr content, and use it as map key to get the label
+	
+	switch (this.type) {
+	case "circle":
+		this.ox = this.attr("cx");
+		this.oy = this.attr("cy");
+		break;
+	case "rect":
+		this.ox = this.attr("x");
+		this.oy = this.attr("y");
+		break;
+	default:
+		;
+	}	
+	
+//    this.attr({opacity: 1});
+	
+},
+move = function (dx, dy) {
+    // move will be called with dx and dy
+	var x = this.ox + dx;
+	var y = this.oy + dy;	
+	switch (this.type) {
+	case "circle":
+		this.attr({cx: x, cy: y});
+		break;
+	case "rect":
+		this.attr({x: x, y: y});
+		break;		
+	default:
+		;
+	}
+
+	//mode label
+	var labelText = LabelObjects[this.content];
+	if ( LABEL_ON ) {
+		labelText.attr({x: this.ox + dx +NodeSize/2-LabelXOff , y: this.oy + dy + LabelYOff });	
+	}	
+	
+	// move path, use path attr
+	var node = NEObjects[this.content];
+	node.Topox = x;
+	node.Topoy = y;	
+	
+    var oldpeerend;
+    if ( node.links.length > 0 ) {
+        var linknode1 = node.links[0];
+		if(linknode1.end1.Label == this.content ) {
+            oldpeerend = linknode1.end2;
+		}	else {
+            oldpeerend = linknode1.end1;
+		}
+    }
+
+
+    var ii=0;
+	for ( var i=0, len = node.links.length; i<len; i++) {
+		var link = node.links[i];
+		
+		var x2,y2,peerend;
+		if(link.end1.Label == this.content ) {
+            peerend = link.end2;
+			x2 = link.end2.Topox + NodeSize/2;
+			y2 = link.end2.Topoy + NodeSize/2;
+		}	else {
+            peerend = link.end1;
+			x2 = link.end1.Topox + NodeSize/2;
+			y2 = link.end1.Topoy + NodeSize/2;	
+		}
+		
+		var x1 = x + NodeSize/2;
+		var y1 = y + NodeSize/2;
+        
+        if ( peerend != oldpeerend ) {
+            ii = 1;
+            oldpeerend = peerend;
+        }
+        else
+            ii++;
+
+		var str = getPathStr(x1,y1,x2,y2,ii,ii);
+		link.path.attr("path",str);
+	}
+},
+up = function () {
+    // restoring state
+//    this.attr({opacity: .5});
+	// save the xy to the node object
+//	var node = NEObjects[this.content];
+/*	
+	switch (this.type) {
+	case "circle":
+		node.Topox = this.cx;
+		node.Topoy = this.cy;
+		break;
+	case "rect":
+		node.Topox = this.x;
+		node.Topoy = this.y;		
+		break;		
+	default:
+		;
+	}
+*/
+
+	
+};
+
+function getPathStr(x1,y1,x2,y2,curDegree1,curDegree2) {
+
+		var A = x2 - x1;
+		var B = y2 - y1;
+		var C = Math.sqrt(A*A + B*B)*4;
+		
+		//changex1 / B = NodeSize/2 / C;
+        flag = curDegree1 % 2 ==1 ? 1 : -1;
+		var changex1 = Math.round( NodeSize*curDegree1 /C * B ) * flag ;
+		var changey1 = Math.round( NodeSize*curDegree1 /C * A) * flag;
+		var changex2 = Math.round( NodeSize*curDegree2 /C * B) * flag;
+		var changey2 = Math.round( NodeSize*curDegree2 /C * A) * flag;
+		
+		changex1 = x1 + changex1;
+		changey1 = y1 - changey1;
+		changex2 = x2 + changex2;
+		changey2 = y2 - changey2;
+		var str =   "M"+ x1 + " " + y1 + 
+						"C"+ changex1 + " " + changey1 + " " +
+						changex2 + " " + changey2 + " " +
+						x2 + " " + y2;
+		//alert(str);
+		return str;
+}
+
+function addNodeToCanvas(canvas,type,x,y,label) {
+var node;
+switch (type) {
+  case "node":
+    node = canvas.rect(x, y, NodeSize,NodeSize).attr({fill: "white", opacity:1, cursor: "move"});
+
+	LabelXOff = label.length * 2 / 2;
+	LabelYOff = NodeSize + 6;
+	text = canvas.text(x+NodeSize/2-LabelXOff, y+LabelYOff,label);
+
+	node.content = label;
+	LabelObjects[label]=text;
+
+	node.drag(move,start,up);	
+
+    node.node.ondblclick = function () {window.open("olttable.html",label + "Device Config"); };
+
+	return node;
+	break;
+  case "terminal":
+    return canvas.circle(x, y, TerminalSize);
+	break;
+  case "connector":
+    return canvas.circle(x, y, ConnectorSize);
+	break;	
+  default:
+	return null;
+	}
+}
+
+function addTopoNodes(canvas, NEs, start, end) {
+for(var i=start; i<end;i++) {
+  label = NEs[i].Label;
+  NEs[i].raphael = addNodeToCanvas(canvas, NEs[i].NodeType,NEs[i].Topox,NEs[i].Topoy,label);
+  
+  var links = new Array();
+  NEs[i].links = links;
+  
+  NEObjects[label]=NEs[i];
+  
+  saveNodeToServer(NEs[i]);
+
+}
+
+return NEs;
+}
+
+function createLink(linkLabel, node1, node2) {
+	//check node1, node2 existance
+	var nodeA = NEObjects[node1];
+	var nodeB = NEObjects[node2];
+	if ( nodeA == undefined ) { 
+		DisplayError("No such node " + node1);
+		return;
+	} ;
+	if ( nodeB == undefined ) { 
+		DisplayError("No such node " + node2);
+		return;
+	} ;	
+	
+	//var alinknum = nodeA.links.length;
+	//var blinknum = nodeB.links.length;
+
+    var alinknum=0, blinknum=0;
+    for (var i=nodeA.links.length; i>0; i--)
+    if ( nodeA.links[i-1].end2 == nodeB || nodeA.links[i-1].end1 == nodeB ) {
+            alinknum++;
+            blinknum++;
+    }
+	
+	var x1 = nodeA.Topox + NodeSize/2;
+	var y1 = nodeA.Topoy + NodeSize/2;
+	var x2 = nodeB.Topox + NodeSize/2;
+	var y2 = nodeB.Topoy + NodeSize/2;	
+	var str = getPathStr(x1,y1,x2,y2, alinknum+1, blinknum+1);
+	
+	var path = canvas.path(str);
+	path.attr({stroke:"green","stroke-width":2});
+	path.toBack();
+	
+	var linkObj = new Object();
+	linkObj.name = linkLabel;
+	linkObj.end1 = nodeA;
+	linkObj.end2 = nodeB;
+	linkObj.path = path;
+	
+	LinkObjs[linkLabel] = linkObj;
+	
+	var alinknum = nodeA.links.length;
+	var blinknum = nodeB.links.length;
+
+	nodeA.links[alinknum] = linkObj;
+	nodeB.links[blinknum] = linkObj;
+
+
+}
+
+
+
+function loadobjs(canvas, loaded_objs) {
+NEs = JSON.parse(loaded_objs);
+if (NEs == null )  return null;
+NodeNum = NEs.length;
+return addTopoNodes(canvas, NEs, 0, NodeNum);
+}
+
+function saveNodeToServer(node) {
+//var xhr = new XMLHttpRequest();
+//xhr.open("post","save_node.php",true);
+
+}
+
+
+/*
+*cmd sample: 
+*add node/connector/terminal ([ip=xxx] [type=xxx] [label=xxx];)*
+*discovery iprange=xxx-xxx type=xxx
+*del node/connector/terminal label=xxx
+*/
+
+//add node/connector/terminal ([ip=xxx] [type=xxx] [label=xxx];)*
+//add node label
+//return NEs
+function parseNEsFromAddInputCmd(cmdItems) {
+var type = cmdItems[1];
+var len = cmdItems.length;
+if (len<4) { // cmd=add node, using default xy location, 
+	var NE = new Object();
+	NE.NodeType = type;
+	NE.Topox = 100;
+	NE.Topoy = 100;	
+	if ( len < 3) {//use the node count as label 
+		no = NodeNum+1;
+		NE.Label = no.toString();
+	} else  {
+		NE.Label = cmdItems[len-1];
+	}
+	NEs[NodeNum++] = NE;
+	return NEs;
+}
+var nodes = cmdItems[2].split(";");
+for(i=0;i<nodes.length;i++) {
+	
+}
+return NEs;
+}
+
+function processTopoCmd(canvas, cmd) {
+var cmdItems = cmd.split(" ");
+if ( validateCheck(cmdItems) != true ) {
+  return null;
+}
+var cmdName = cmdItems[0];
+switch(cmdName) {
+case "add":
+	if (cmdItems[1] == "link" ) { // add link linklabel node1 node2 
+		linklabel = cmdItems[2];
+		node1 = cmdItems[3];
+		node2 = cmdItems[4];
+		createLink(linklabel, node1, node2);		
+	}
+	else {
+		var start = NodeNum;
+		parseNEsFromAddInputCmd(cmdItems);
+		addTopoNodes(canvas,NEs,start,NodeNum);
+	}
+case "del":
+	return null;
+case "discovery":
+	return null;
+case "alarm": // simulate alarm presentation, like alarm link broken, etc
+// Present Alarm
+// link alarm: alarm link $linkname $alarmtype, eg. alarm link a broken
+// node alarm: alarm node $nodename $alarmtype
+    if ( cmdItems[1] == 'link' ) {
+        linkname = cmdItems[2];
+        alarmType = cmdItems[3];
+        processLinkAlarmDisplay(linkname, alarmType);
+    }
+    if ( cmdItems[1] == 'node' ) {
+        nodename = cmdItems[2];
+        alarmType = cmdItems[3];
+        processNodeAlarmDisplay(nodename, alarmType);
+    }
+default:
+	return null;
+}
+
+}
+
+// Present Link Alarm
+// link alarm: alarm link $linkname $alarmtype, eg. alarm link a broken
+function processLinkAlarmDisplay(linkName, alarmType) {
+//Find the link by linkName
+    var linkObj = LinkObjs[linkName];
+
+//show the alarm path and attr by alarmType
+    if ( alarmType == "LOS" ) 
+        linkObj.path.attr({stroke:"red"});
+    if ( alarmType == "BRK" ) 
+        linkObj.path.attr({stroke:"red","stroke-dasharray":"- "});
+}
+
+// Present Node Alarm
+// node alarm: alarm node $nodename $alarmtype, eg. alarm node boy FANFailure
+function processNodeAlarmDisplay(nodeName, alarmType) {
+//Find the node by nodeName
+    var nodeObj = NEObjects[nodeName];
+
+//show the alarm path and attr by alarmType
+    if ( alarmType == "FANFailure" ) 
+        nodeObj.attr({fill:"red"});
+}
+
+function alarm_recv() {
+	for(var i=0;i<NEs.length;i++) {
+		alarm_recv_NE(NEs[i]);
+	}
+	setTimeout(alarm_recv,3000);
+}
+
+function alarm_recv_NE(NE) {
+	if ( NE.Label == "alarm" )
+		NE.raphael.attr({fill:"red"});
+}
+

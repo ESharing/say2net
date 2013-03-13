@@ -1,0 +1,100 @@
+﻿<html>
+<head>
+<link href="common.css" rel="stylesheet" type="text/css">
+
+<script type="text/javascript"  src="../jslib/raphael1_5.js"></script>
+<script type="text/javascript"  src="common.js"></script>
+<script type="text/javascript"  src="topo.js"></script>
+<script type="text/javascript"  src="json2.js"></script>
+<script type="text/javascript" src="history_cmd.js"></script>
+
+</head>
+<body>
+<div id="head">
+<a href="service.html" target="_blank">业务</a>
+<a href="topo.html" target="_blank">拓扑</a>
+<a href="fault.html"  target="_blank">告警</a>
+<a href="perf.html" target="_blank">性能</a>
+<a href="config.html" target="_blank">配置</a>
+<a href="inventory.html" target="_blank">资源</a>
+</div>
+
+<div id="input">
+<input id="cmdInput" type="text" size="130" maxlength="100" name="inputStr" value="Input Sth."/>
+<div class="output" id="output"/>
+</div>
+
+</div>
+</div>
+
+<div id="topo">
+</div>
+<script type="text/javascript">
+/*
+var pageWidth = window.innerWidth;
+var pageHeight = window.innerHeight;
+if (typeof pageWidth != "number"){
+if (document.compatMode == "CSS1Compat"){
+pageWidth = document.documentElement.clientWidth;
+pageHeight = document.documentElement.clientHeight;
+} else {
+pageWidth = document.body.clientWidth;
+pageHeight = document.body.clientHeight;
+}
+}
+
+var canvas = Raphael("topo",pageWidth, pageHeight);
+*/
+var canvas = Raphael("topo",1600, 900);
+/*
+* load topo data
+* What: network element(node/connector/terminal/link): id, type, location, attributes
+* Where: management area: name
+* Who: responsibility person: name
+* Level: 1/2/3/4/5/6/7 1:top 7:buttom
+* XY: (x,y) in canvas
+*/
+/* Data Sample 
+var loaded_objs=" 
+<topo_objects> 
+<topo_object> 
+<ne id="1" type="node" localtion="cuiyuan1" devtype="onu" swver="1.0" ></ne>
+<area name="CUIYUAN"/>
+<who name="Wei"/>
+<Level value="7"/>
+<topoxy x="100" y="100"/>
+</topo_object>
+</topo_objects>	
+";
+
+//XML format, because XML is not supported differently in browsers, I prefer using JSON.
+var loaded_objs="<topo_objects> <topo_object> <ne id=\"1\" type=\"node\" localtion=\"cuiyuan1\" devtype=\"onu\" swver=\"1.0\" ></ne><area name=\"CUIYUAN\"/><who name=\"Wei\"/><Level value=\"7\"/><topoxy x=\"100\" y=\"100\"/></topo_object></topo_objects>	";
+
+var xmldom = null;
+try {
+xmldom = parseXml(loaded_objs);
+} catch (ex){
+alert(ex.message);
+}
+alert(xmldom.getElementsByTagName("topoxy"));
+*/
+
+//JSON data sample
+/*
+var loaded_objs="[{\"ne\":{\"id\":\"100\",\"type\":\"node\",\"DevType\":\"ONU\",\"SWVer\":\"1.0\",\"MAC\":\"008ea8321dca\",\"SID\":\"234123412323\"},\"area\":{\"name\":\"CUIYUAN\"},\"owner\":{\"name\":\"Wei\"},\"topo_level\":{\"level\":6},\"topoxy\":{\"x\":500,\"y\":300}},{\"ne\":{\"id\":\"200\",\"type\":\"node\",\"DevType\":\"ONU\",\"SWVer\":\"1.0\",\"MAC\":\"008ea8321dca\",\"SID\":\"234123412323\"},\"area\":{\"name\":\"CUIYUAN\"},\"owner\":{\"name\":\"Wei\"},\"topo_level\":{\"level\":6},\"topoxy\":{\"x\":700,\"y\":200}}]";
+*/
+////id, NodeType,DevType,SWVer,MAC,SID,AreaName,OwnerName,Level,Topox,Topoy
+//var loaded_objs="[{\"id\":\"100\",\"NodeType\":\"node\",\"Label\":\"boy\",\"DevType\":\"ONU\",\"SWVer\":\"1.0\",\"MAC\":\"008ea8321dca\",\"SID\":\"234123412323\",\"AreaName\":\"CUIYUAN\",\"OwnerName\":\"Wei\",\"Level\":6,\"Topox\":500,\"Topoy\":300},{\"id\":\"100\",\"NodeType\":\"node\",\"Label\":\"girl\",\"DevType\":\"ONU\",\"SWVer\":\"1.0\",\"MAC\":\"008ea8321dca\",\"SID\":\"234123412323\",\"AreaName\":\"CUIYUAN\",\"OwnerName\":\"Wei\",\"Level\":6,\"Topox\":700,\"Topoy\":300}]";
+var loaded_objs="[]";
+
+//eval has the risk of executing the malicious code, so avoiding using it.
+//var NEs = eval("("+loaded_objs+")");
+
+loadobjs(canvas, loaded_objs);
+
+init();
+document.title="Topo";
+setTimeout(alarm_recv,3000);
+</script>
+</body>
+</html>

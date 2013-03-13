@@ -1,0 +1,77 @@
+﻿<html>
+<head>
+<style type="text/css">
+
+body {
+font-family: arial, verdana;
+font-size:medium;
+}
+* {
+margin:3px;
+padding:0;
+}
+#head {
+width:300px;
+}
+#input {
+position:absolute;
+top:0px;
+left:340px;
+width:800px;
+}
+#go {
+position:absolute;
+top:0px;
+left:745px;
+}
+#topo{
+width:98%;
+height:93%;
+border-style:solid; border-width:1px;
+}
+
+#output
+{
+	width:880px;
+	font-family:Arial;
+	font-size: 10pt;
+	color:black;
+	padding-left: 3px;
+	padding-top: 3px;
+	border: 1px solid #000000;
+	background: #fff;
+}
+
+</style>
+<script type="text/javascript"  src="../jslib/raphael1_5.js"></script>
+<script type="text/javascript"  src="common.js"></script>
+<script type="text/javascript"  src="json2.js"></script>
+<script type="text/javascript" src="history_cmd.js"></script>
+</head>
+<body>
+<div id="head">
+<a href="service.html" target="_blank">服务</a>
+<a href="topo.html" target="_blank">拓扑</a>
+<a href="fault.html"  target="_blank">告警</a>
+<a href="perf.html" target="_blank">性能</a>
+<a href="config.html" target="_blank">配置</a>
+<a href="inventory.html" target="_blank">资源</a>
+</div>
+
+<div id="input">
+<input id="cmdInput" type="text" size="130" maxlength="100" name="inputStr" value="Input Sth."/>
+<div class="output" id="output"/>
+</div>
+
+</div>
+</div>
+
+<div id="topo">
+</div>
+<script type="text/javascript">
+init();
+
+document.title="Performance";
+</script>
+</body>
+</html>

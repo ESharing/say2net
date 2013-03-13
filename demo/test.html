@@ -1,0 +1,99 @@
+﻿<html>
+<head>
+<script type="text/javascript"  src="../jslib/raphael1_5.js"></script>
+<script type="text/javascript">
+
+window.onload = function () {
+var paper = Raphael("notepad", 800, 600);
+
+//var c = paper.circle(100, 100, 50).attr({fill: "#fff", opacity:.5});
+var c = paper.rect(100, 100, 50,50).attr({fill: "#fff", opacity:.5});
+c.attr({stroke: "blue", "fill-opacity": 0, "stroke-width": 2, cursor: "move"});
+
+var start = function () {
+    // storing original coordinates
+	switch (this.type) {
+	case "circle":
+		this.ox = this.attr("cx");
+		this.oy = this.attr("cy");
+		break;
+	case "rect":
+		this.ox = this.attr("x");
+		this.oy = this.attr("y");
+		break;
+	default:
+		;
+	}	
+    this.attr({opacity: 1});
+},
+move = function (dx, dy) {
+    // move will be called with dx and dy
+	switch (this.type) {
+	case "circle":
+		this.attr({cx: this.ox + dx, cy: this.oy + dy});
+		break;
+	case "rect":
+		this.attr({x: this.ox + dx, y: this.oy + dy});
+		break;		
+	default:
+		;
+	}
+},
+up = function () {
+    // restoring state
+    this.attr({opacity: .5});
+};
+c.drag(move, start, up);
+}
+
+</script>
+
+</head>
+<body>
+<div id="notepad">
+</div>
+
+<script type="text/javascript">
+/*
+var paper = Raphael("notepad", 800, 600);
+
+//var c = paper.circle(100, 100, 50).attr({fill: "#fff", opacity:.5});
+var c = paper.rect(100, 100, 50,50).attr({fill: "#fff", opacity:.5});
+var start = function () {
+    // storing original coordinates
+	switch (this.node.nodeName) {
+	case "circle":
+		this.ox = this.attr("cx");
+		this.oy = this.attr("cy");
+		break;
+	case "rect":
+		this.ox = this.attr("x");
+		this.oy = this.attr("y");
+		break;
+	default:
+		;
+	}	
+    this.attr({opacity: 1});
+},
+move = function (dx, dy) {
+    // move will be called with dx and dy
+	switch (this.node.nodeName) {
+	case "circle":
+		this.attr({cx: this.ox + dx, cy: this.oy + dy});
+		break;
+	case "rect":
+		this.attr({x: this.ox + dx, y: this.oy + dy});
+		break;		
+	default:
+		;
+	}
+},
+up = function () {
+    // restoring state
+    this.attr({opacity: .5});
+};
+c.drag(move, start, up);
+*/
+</script>
+</body>
+</html>

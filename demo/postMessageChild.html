@@ -1,0 +1,105 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kaazing - PostMessage Child IFrame</title>
+
+    <script src="/html5/PostMessage.js"></script>
+    <style>
+       body {overflow:none; font-family:Helvetica,Arial,sans-serif;}
+       iframe { width: 480px; height: 250px; border: none }
+       fieldset { width: 400px; }
+       fieldset select { display:block; float:left; width:220px; margin-right:20px; }
+       fieldset input { display:block; float:left; width:220px; margin-right:20px; }
+       fieldset label { display:block; float:left; margin-right:10px; text-align:right; width:120px; }
+       div#log { display:block; width: 400px; height:95px; margin-top: 5px; overflow:auto; }
+    </style>
+
+    <script>
+        function setup() {
+            var output = document.getElementById("output")
+
+            var destination = document.getElementById("destination");
+            var origin = document.getElementById("origin");
+            var message = document.getElementById("message");
+
+            var send = document.getElementById("send");
+            var clear = document.getElementById("clear");
+
+            // populate origin
+            origin.value = location.protocol + "//" + location.host;
+
+			// clear the log output
+            clear.onclick = function() {
+            	while (output.lastChild) {
+            		output.removeChild(output.lastChild);
+            	}
+            }
+
+            // whenever the Send button is pressed, post a message to the currently
+            // selected destination (either this iframe, or the parent iframe)
+            send.onclick = function() {
+                postMessage0(eval(destination.value), message.value, "*");
+            }
+            
+            // listen for any messages posted to this iframe
+            window.addEventListener("message", function(event) {
+                var text = document.createTextNode("[" + event.origin + "] " + event.data + "\r\n");
+                output.insertBefore(text, output.firstChild);
+            }, false);
+        }
+    </script>
+</head>
+<body onload="setup()" >
+    <div >
+        <form>
+            <fieldset>
+                <legend>Post Message - Child Frame</legend>
+
+                <label for="origin" >Origin</label>
+                <input id="origin" readonly>
+
+                <label for="destination" >Destination</label>
+                <select id="destination">
+                    <option value="self" >self</option>
+                    <option value="parent" >parent</option>
+                </select>
+                <label for="message" >Message</label>
+                <input id="message" value="Hello, world">
+
+                <button type="button" id="clear" >Clear</button>
+                <button type="button" id="send">Send</button>
+                <div id="log">
+                   <pre id="output" ></pre>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</body>
+</html>

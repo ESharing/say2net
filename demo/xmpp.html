@@ -1,0 +1,465 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+    <link rel="shortcut icon" href="http://www.kaazing.com/images/favicon.ico" />
+    <link rel="stylesheet" href="resources/css/demo.css" />
+
+    <title>Kaazing - XMPP Chat Client Demonstration</title>
+
+    <script src="/html5/WebSocket.js"></script>
+    <script src="/protocol/XmppClient.js"></script>
+    <script src="/security/Keyring.js"></script>
+    <script>
+        var client;
+        var contactList;
+
+        var userClasses = ["chat_user1", "chat_user2", "chat_user3", "chat_user4", "chat_user5"]
+
+        // Create a Kaazing Gateway keyring to store credentials for this
+        // page's services.
+        var keyring = new PlaintextKeyring(
+            document.sessionStorage,    // store the keyring in the HTML5 sessionStorage, as it is encrypted
+            "/session");                // location of keyring from the server configuration file
+
+        function setup() {
+
+            var recipientChoice = document.getElementById("recipientChoice");
+
+            var roster = document.getElementById("roster");
+            var rosterStatus = document.getElementById("rosterStatus");
+            var chatText = document.getElementById("chatText");
+            var chatWindow = document.getElementById("chatWindow");
+
+            var jabberConnect = document.getElementById("jabberConnect");
+            var jabberUser = document.getElementById("jabberUser");
+            var jabberPassword = document.getElementById("jabberPassword");
+            var jabberReset = document.getElementById("jabberReset");
+            var jabberCredentials = document.getElementById("jabberCredentials");
+
+
+            // This key will pull from the username and password fields the first
+            // time it is requested. Subsequent requests do not need the fields
+            // because the credentials are stored in the key
+            var jabberKey = keyring.createKey("jabber", function (continuation) {
+
+                // store off the username for our UI displays
+                client.userJid = jabberUser.value;
+
+                // pass the values from the form field along to the keyring
+                continuation({ username:jabberUser.value, password:jabberPassword.value });
+
+                // hide the UI controls, as we won't need them anymore
+                jabberCredentials.style.visibility = "hidden";
+
+                // show the ResetCredentials button
+                jabberReset.style.visibility = "visible";
+
+
+            });
+
+            var gui_jabberAuth = function() {
+                // Create the jabber key
+
+                // allow users to purge the credentials if desired
+                jabberReset.onclick = function () {
+                    // purge the jabberKey from the keychain
+                    jabberKey.purge();
+
+                    // disconnect the user
+                    gui_jabberDisconnect();
+
+                    // re-show the credentials controls
+                    jabberCredentials.style.visibility = "visible";
+
+                    // re-hide the reset button
+                    jabberReset.style.visibility = "hidden";
+                };
+
+                client.authenticate(jabberKey);
+            }
+
+            var gui_jabberResetUI = function() {
+                jabberConnect.innerHTML = "Connect!";
+                jabberUser.disabled = false;
+                jabberPassword.disabled = false;
+                jabberKey.purge();
+            }
+
+            var gui_jabberDisconnect = function() {
+                client.disconnect();
+                gui_jabberResetUI();
+            }
+
+            jabberConnect.onclick = function() {
+
+                if (jabberConnect.innerHTML == "Connect!") {
+                    gui_connect("jabber", gui_jabberAuth, "Home", "localhost");
+                    jabberConnect.innerHTML = "Disconnect";
+                    jabberUser.disabled = true;
+                    jabberPassword.disabled = true;
+                }
+                else {
+                    gui_jabberDisconnect();
+                }
+
+            }
+
+            var gui_getRoster = function() {
+                var rosterCallback = function(roster) {
+                    contactList = roster;
+                    gui_updateRoster();
+                }
+                client.getRoster(rosterCallback)
+            }
+
+            var gui_updateRoster = function() {
+
+                var r = document.getElementById("roster");
+
+                var entity;
+
+                // sort the list by status
+
+                var chatList = new Array();
+                var availableList = new Array();
+                var awayList = new Array();
+                var extendedList  = new Array();
+                var dndList  = new Array();
+                var offlineList = new Array();
+
+                for (var j=0; j<contactList.length; j++) {
+                    entity = contactList[j];
+
+                     // assign a user style class if not
+                     // already present
+                     if (entity.userClass == null) {
+                        entity.userClass = userClasses[j % userClasses.length];
+                     }
+
+                     if (entity.show == 'chat')
+                       chatList.push(entity)
+                     else if (entity.show == 'away')
+                       awayList.push(entity)
+                     else if (entity.show == 'xa')
+                       extendedList.push(entity)
+                     else if (entity.show == 'dnd')
+                       dndList.push(entity)
+                     else if (entity.status == 'Available')
+                       availableList.push(entity)
+                     else
+                       offlineList.push(entity);
+
+                }
+
+                contactList = chatList.concat(availableList).concat(awayList).concat(extendedList).concat(dndList);
+                contactList = contactList.concat(offlineList);
+
+
+                // populate the friends list
+                var s = "<h5 class=line>Friends</h4>";
+
+                for (var i=0; i<contactList.length; i++) {
+                    entity = contactList[i];
+
+                    var show_class = "chat_show " + (entity.show ? ("chat_show_" + entity.show)
+                                                                 : "chat_show_available");
+
+                    entity.shortName = shortName(entity.jid);
+                    if (entity.show && !entity.status)
+                      entity.status = "Busy";
+
+                    s  += "<div class=chat_friend><a href='#' onclick=gui_recipient('" + entity.shortName + "')><div>" + entity.shortName
+                            + "</div>" + ((entity.status || entity.show) ? ("<div class='" + show_class + "'>" + entity.status + "</div>")
+                                             : "<div class='chat_show chat_show_offline'>Offline</div>")
+                            + "</a></div>";
+                }
+                r.innerHTML = s;
+
+                // populate the chat recipient list, preserving selection
+
+                var currRecipient = recipientChoice.options[recipientChoice.selectedIndex].text;
+                var newSelectedIndex;
+                var newRecipients = new Array();
+                for (var k=0; k < contactList.length; k++) {
+                    newRecipients.push(contactList[k].shortName);
+                    if (currRecipient === contactList[k].shortName)
+                      newSelectedIndex = k;
+                }
+
+
+                //clear out the list
+                if ( recipientChoice.hasChildNodes() )
+                {
+                    while ( recipientChoice.childNodes.length >= 1 )
+                    {
+                        recipientChoice.removeChild( recipientChoice.firstChild );
+                    }
+                }
+
+
+                for (var l=0; l < newRecipients.length; l++) {
+                    recipientChoice.options[l] = new Option(newRecipients[l], contactList[l].jid);
+                }
+
+                recipientChoice.selectedIndex = newSelectedIndex;
+
+
+            }
+
+            var gui_connect = function(service, authorizeCallback, resource, server) {
+
+                // default the location
+                var authority = location.host;
+                if (location.search) {
+                    authority = location.search.slice(1) + "." + authority;
+                }
+                else {
+                    var parts = authority.split(':');
+                    var ports = { http:'80', https:'443' };
+                    authority = parts[0] + ':' + (parseInt(parts[1] || ports[location.protocol]) + 2);
+                }
+                var url = location.protocol.replace("http", "ws") + "//" + authority + "/" + service;
+
+                client = new XmppClient();
+                client.onopen = function() {
+                    // call the authorization callback passed in
+                    authorizeCallback();
+                }
+                client.onclosed = function() {
+                    client.userJid = null;
+                    rosterStatus.style.visibility = "hidden";
+                    chatWindow.style.visibility = "hidden";
+
+                    gui_jabberResetUI();
+
+                }
+                client.onmessage = function(msg) {
+                    // find the sender in our list
+                    var senderClass;
+                    for (var i=0; i<contactList.length; i++) {
+                        if (contactList[i].jid == msg.from.slice(0, msg.from.indexOf("/"))) {
+                            senderClass = contactList[i].userClass;
+                            break;
+                        }
+                    }
+
+                    gui_showMessage(msg.from, msg.body, senderClass);
+                }
+                client.onerror = function(e) {
+                    alert("error: " + e);
+
+                    gui_jabberResetUI();
+                }
+                client.onpresence = function(p) {
+                    var rosterName = p.from.slice(0, p.from.indexOf("/"))
+
+                    for (var i=0; i<contactList.length; i++) {
+                        if (contactList[i].jid === rosterName) {
+                            contactList[i].status = p.status
+                            contactList[i].show = p.show
+                        }
+                    }
+                    gui_updateRoster();
+                }
+                client.onauthenticated = function() {
+
+                    client.bind(resource);
+                    gui_getRoster();
+
+                    gui_setStatus();
+
+                    rosterStatus.style.visibility = "visible";
+                    chatWindow.style.visibility = "visible";
+
+                }
+                client.connect(url, server);
+
+            }
+
+        }
+
+
+        var shortName = function(jid) {
+            return jid.split('@')[0];
+        }
+
+        var gui_xescape = function(s) {
+            return s.replace("&", "&amp;", "g")
+                    .replace("<", "&lt;", "g")
+                    .replace(">", "&gt;", "g")
+        }
+
+        var gui_showMessage = function(from, body, chatClass) {
+            var xbody = gui_xescape(body);
+            var from = shortName(from);
+            var s = "<span class='" + chatClass + "'><a href='#' onclick=gui_recipient('" + from + "')>" + from + "</a>: </span>" + xbody;
+
+            var chatText = document.getElementById("chatText");
+            chatText.innerHTML = chatText.innerHTML + "<div class='chat_line'>" + s + "</div>";
+
+            chatText.scrollTop = chatText.scrollHeight;
+
+        }
+
+
+        var gui_setStatus = function() {
+            var status = document.getElementById('status').value
+            var availability = document.getElementById('availability').value.toLowerCase()
+            client.setStatus(status, availability);
+        }
+
+        var gui_recipient = function(to) {
+            var recipientChoice = document.getElementById("recipientChoice");
+            for (var i=0; i<recipientChoice.length; i++) {
+                if (recipientChoice.options[i].text == to) {
+                  recipientChoice.options[i].selected = true;
+                  return;
+                }
+            }
+        }
+
+        var gui_send = function(body) {
+            var recipientChoice = document.getElementById("recipientChoice");
+            var j = recipientChoice.options[recipientChoice.selectedIndex].value;
+            client.sendMessage(j, body);
+
+
+            gui_showMessage(client.userJid, body, "chat_me");
+        }
+
+        function gui_enterSend(field,event) {
+            var theCode = event.keyCode ? event.keyCode : event.which ? event.which : event.charCode;
+            if (theCode == 13){
+                gui_send(field.value);
+                field.value = "";
+                return false;
+            }
+            else
+            return true;
+        }
+    </script>
+</head>
+<body onLoad="setup()" >
+
+<div id="overall_frame">
+    <div id="sidebar">
+    </div>
+    <div id="wrapper">
+
+        <div id="header">
+            <div id="menu">
+                <a href="index.html">Demos:</a>
+                <a href="stomp.html">JavaScript Stomp</a>
+                <a href="stock.html">Stock Trading</a>
+                <a href="xmpp.html">XMPP Chat</a>
+                <a href="sse.html">Server-Sent Events</a>
+                <a href="postMessage.html">PostMessage</a>
+            </div>
+        </div>
+        <div id="content">
+          <div id="main">
+              <div id="main_header">
+              <h4>Simple Chat Demonstration</h4>
+              <span class="info">This is a simplified chat demonstration that illustrates the ease of creating
+              a chat client using the Kaazing Gateway. This demo is configured to talk to an XMPP server running
+              on your local machine. <a href="../documentation/xmpp-js-tutorial.html#openfire_setup">XMPP setup instructions are online.</a></span>              </div>
+            <div id="chat_select">
+              <span class="info">Step 1: Connect to a chat server</span>
+
+              <div id="jabber">
+              <span class="note">To connect to your local server, make sure your local XMPP server is
+              running, enter your existing username and password, and hit "Connect!" The username should be the full Jabber id,
+              such as "rocky@localhost". For tips on setting up a local XMPP server, <a href="../documentation/xmpp-js-tutorial.html#openfire_setup">follow our guide</a>.</span>
+              <div id="jabberCredentials">
+              <div style="margin-bottom:5px"><span class="chat_prompt">Username:</span><input type="text" id="jabberUser" style="position:absolute; right:0px;"></input></div>
+              <div style="margin-bottom:5px"><span class="chat_prompt">Password:<input type="password" id="jabberPassword" style="position:absolute; right:0px"></input></div>
+              </div>
+              <div><button id="jabberReset" style="position:absolute; left:0px;">Reset credentials</button><button id="jabberConnect" style="position:absolute; right:0px">Connect!</button></div>
+              </div>
+
+            </div>
+            <div id="chat_roster">
+              <span class="info">Step 2: Select a friend</span>
+
+              <div id="rosterStatus" style="visibility:hidden">
+
+              <div id="roster"></div>
+
+              <div id="setAvailability">
+              <div style="margin:0px 0px 5px 10px;"><span class="chat_prompt">My status: </span>
+              <select onchange="gui_setStatus()" id="availability" style="position:absolute; right:10px; width:120px">
+              <option value="available">Available</option>
+              <option value="away">Away</option>
+              <option value="dnd">Do Not Disturb</option>
+              </select>
+              </div>
+              </div>
+
+              <div id="setStatus">
+              <div style="margin:0px 0px 5px 10px;">
+              <span class="chat_prompt">My note: </span>
+              <input type="text" value="On web chat" id="status" onblur="gui_setStatus()"  style="position:absolute; padding:0px; right:10px; width:150px"/>
+              </div>
+              </div>
+
+              </div>
+
+            </div>
+            <div id="chat_messages">
+              <span class="info">Step 3: Send your messages!</span>
+
+                <div id="chatWindow" class="chat_window" style="visibility:hidden">
+                    <div id="chatText" class="chat_text">
+                    <div style="height:100%"></div></div>
+                    <div class="chat_address">
+                      <div style="margin:0px 0px 5px 0px;">
+                      <span class="chat_prompt">Send to:
+                      <select id="recipientChoice" style="position:absolute; right:10px; width:175px">
+                      <option></option>
+                      </select>
+                      </span>
+                      </div>
+                      <input type="text" onkeypress="gui_enterSend(this,event);" style="width:99%; height:auto;" class="chat_textentry"></textarea>
+
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>

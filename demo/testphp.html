@@ -1,0 +1,68 @@
+﻿<html>
+<head>
+<script type="text/javascript" >
+var EventUtil = {
+addHandler: function(element, type, handler){
+if (element.addEventListener){
+element.addEventListener(type, handler, false);
+} else if (element.attachEvent){
+element.attachEvent("on" + type, handler);
+} else {
+element["on" + type] = handler;
+}
+},
+
+getEvent: function(event){
+return event ? event : window.event;
+},
+getTarget: function(event){
+return event.target || event.srcElement;
+},
+preventDefault: function(event){
+if (event.preventDefault){
+event.preventDefault();
+} else {
+event.returnValue = false;
+}
+},
+
+removeHandler: function(element, type, handler){
+if (element.removeEventListener){
+element.removeEventListener(type, handler, false);
+} else if (element.detachEvent){
+element.detachEvent("on" + type, handler);
+} else {
+element["on" + type] = null;
+}
+},
+
+stopPropagation: function(event){
+if (event.stopPropagation){
+event.stopPropagation();
+} else {
+event.cancelBubble = true;
+}
+}
+};
+
+EventUtil.addHandler(window, "load", function(event){
+var xhr = new XMLHttpRequest();
+xhr.readystatechange = function() {
+if ( xhr.readyState == 4 ) {
+if (xhr.status == 304 || (xhr.status>200 and xhr.status<300) ) {
+  alert(xhr.responseText);
+}
+else {
+  alert("Request was unsuccessful:"+xhr.status);
+}
+}
+};
+xhr.open("post", "testnode.php",true);
+xhr.send();
+xhr.abort();
+});
+</script>
+</head>
+<body >
+</body>
+</html>

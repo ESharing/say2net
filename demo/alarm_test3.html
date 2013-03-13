@@ -1,0 +1,237 @@
+<!--
+  
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+        
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+ 
+-->
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+        "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+
+<link rel="stylesheet" type="text/css" href="../yui/build/fonts/fonts-min.css" />
+<link rel="stylesheet" type="text/css" href="../yui/build/paginator/assets/skins/sam/paginator.css" />
+<link rel="stylesheet" type="text/css" href="../yui/build/button/assets/skins/sam/button.css" />
+<link rel="stylesheet" type="text/css" href="../yui/build/datatable/assets/skins/sam/datatable.css" />
+<script type="text/javascript" src="../yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+<script type="text/javascript" src="../yui/build/element/element-min.js"></script>
+<script type="text/javascript" src="../yui/build/paginator/paginator-min.js"></script>
+<script type="text/javascript" src="../yui/build/button/button-min.js"></script>
+<script type="text/javascript" src="../yui/build/dragdrop/dragdrop-min.js"></script>
+<script type="text/javascript" src="../yui/build/datasource/datasource-min.js"></script>
+<script type="text/javascript" src="../yui/build/datatable/datatable-min.js"></script>
+
+<style type="text/css">
+/* Class for marked rows */
+.yui-skin-sam .yui-dt tr.mark,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc {
+    background-color: red;
+    color: black;
+}
+
+.yui-skin-sam .yui-dt tr.mark2,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc {
+    background-color: yellow;
+    color: black;
+}
+</style>
+
+<title>Kaazing - Stock Ticker Demonstration</title>
+<!--link rel="stylesheet" href="resources/css/demo.css"-->
+
+<!--  Kaazing scripts -->
+<script src="/html5/ByteSocket.js"></script>
+<script src="/protocol/StompClient.js"></script>
+
+<script type="text/javascript">
+var Dom = YAHOO.util.Dom;
+var Event = YAHOO.util.Event;
+markRecs1 = {};
+markRecs2 = {};
+markRecs3 = {};
+markRecs4 = {};
+    
+function setup() {
+//////YUI Table
+var myColumnDefs = [
+	//{key:"row", label:"row counter", resizeable:true,sortable:true},
+	{key:"Comp",resizeable:true, sortable:true},
+	{key:"Abbr",resizeable:true, sortable:true},
+	{key:"Price",resizeable:true, sortable:true, formatter: 'rowMarker'}   
+];
+var globalDataCount=1;
+//var myDataSource = new YAHOO.util.DataSource([{row:globalDataCount, one:"one", two:"two", three:"three"}]);
+var myDataSource = new YAHOO.util.DataSource([]);
+myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+myDataSource.responseSchema = {
+	fields: ["Comp","Abbr","Price"]
+};
+
+var oConfigs = { 
+		paginator: new YAHOO.widget.Paginator({ 
+			rowsPerPage: 15 
+		})	        }; 
+
+var myDataTable = new YAHOO.widget.DataTable("alarmTable",
+		myColumnDefs, myDataSource, oConfigs);			
+
+//////			
+var stockRowIndexes = {};
+
+var stomp = new StompClient();
+
+stomp.onopen = function(headers) {
+	stomp.subscribe("/topic/stock", null);
+}
+
+stomp.onreceipt = function(headers) { }
+
+
+var debugCount=1;
+stomp.onmessage = function(headers, body) {
+  
+  var fields = body.split(':');
+  var company = fields[0];
+  var ticker  = fields[1];
+  var price   = fields[2];
+ 
+  // lookup the table row
+  var stockRowIndex = stockRowIndexes[ticker];	   	
+	
+if ( stockRowIndex === undefined || stockRowIndex === -1 ) {	  // raised alarm
+//				stockRowIndex = myDataTable.getRecordSet().getLength();
+	myDataTable.addRow({Comp:company, Abbr:ticker, Price:price}, 0 );			          
+
+	stockRowIndexes[ticker] = myDataTable.getRecord(0).getId();
+	}
+else { // raised clear alarm
+	myDataTable.deleteRow(stockRowIndex);			
+	stockRowIndexes[ticker] = -1;
+}
+
+// add the raised alarm to table
+/*
+	stockRowIndex = myDataTable.getRecordSet().getLength();
+	myDataTable.addRow({Comp:company, Abbr:ticker, Price:price},stockRowIndex );	                
+*/                
+}
+
+// row color make start
+
+// Create a custom function to store the records needing row coloring
+YAHOO.widget.DataTable.Formatter.rowMarker = function (cell,rec,col,data) {
+    if (data < 40 ) {
+        // In object hash to prevent duplication
+        markRecs1[rec.getId()] = rec;
+    }   
+    if (data >= 40 && data < 60 ) {
+        markRecs2[rec.getId()] = rec;
+    }    
+    if (data >=60 && data < 80) {
+        markRecs3[rec.getId()] = rec;
+    }
+    if (data >= 80 ) {
+        markRecs4[rec.getId()] = rec;
+    }
+    
+    cell.innerHTML = data;
+};
+
+// Function to add the color class to rows
+updateMarks = function () {
+    // Clear mark class off all rows
+    Dom.removeClass(Dom.getElementsByClassName('mark','tr','alarmTable'), 'mark');
+
+    // Apply mark class to identified rows
+    for (var recKey in markRecs1) {
+        if (YAHOO.lang.hasOwnProperty(markRecs1, recKey)) {
+            Dom.addClass(myDataTable.getTrEl(markRecs1[recKey]), 'mark');
+        }
+    }
+    for (var recKey in markRecs2) {
+        if (YAHOO.lang.hasOwnProperty(markRecs2, recKey)) {
+            Dom.addClass(myDataTable.getTrEl(markRecs2[recKey]), 'mark2');
+        }
+    }    
+};
+
+// Set row colors initially
+updateMarks();
+
+// Add the class to the rows on renderEvent
+myDataTable.subscribe('renderEvent', updateMarks);            
+
+// row color make end
+
+stomp.onerror = function(headers, body) {}
+stomp.onclosed = function(headers) {}
+
+var url = document.getElementById("url");
+var connect = document.getElementById("connect");
+var disconnect = document.getElementById("disconnect");
+
+connect.onclick = function() {
+//alert(url.value + "|" + username.value + "|" + password.value);
+	//stomp.connect(url.value, {username:username.value, password:password.value});
+	stomp.connect("ws://localhost:8001/activemq", {username:null, password:null});  
+}
+disconnect.onclick = function() {
+	stomp.disconnect();
+}
+
+var monitorStyle = document.getElementById("monitorStyle");
+
+var style;
+monitorStyle.onclick = function() {
+	style = monitorStyle.value;
+	alert(style);
+}
+
+} 
+</script>
+
+</head>
+<body onload="setup()" class="yui-skin-sam">
+
+<div id="alarmTable"></div>
+
+<br>
+  <div>
+	  <button id="connect" >Connect</button>
+	  <button id="disconnect" >Disconnect</button>
+	  <button id="1min" >Disconnect</button>
+<input  type="radio" value="realtime" name="monitorStyle" checked>	  
+<input  type="radio" value="1min" name="monitorStyle">
+  </div>
+
+
+</body>
+</html>
+

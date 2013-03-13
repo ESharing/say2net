@@ -1,0 +1,58 @@
+﻿<html>
+<body>
+
+An effective method of preventing a form from being submitted more than once.
+
+The browser must be JavaScript-enabled to submit the form.
+
+See the "How To Disable The Submit Button" article linked at 
+
+<a href="http://willmaster.com/possibilities/archives/index2.shtml" target="_blank">
+
+http://willmaster.com/possibilities/archives/index2.shtml</a> 
+
+for more information.
+
+<!-- The JavaScript to submit the form: -->
+
+<script type="text/javascript" language="JavaScript"><!--
+
+var submitted = false;
+
+function SubmitTheForm() {
+
+if(submitted == true) { return; }
+
+document.myform.submit();
+
+document.myform.mybutton.value = 'Thank You!';
+
+document.myform.mybutton.disabled = true;
+
+submitted = true;
+
+}
+
+//--></script>
+<form name="myform" method="post" action="/cgi-bin/script.cgi">
+
+<!-- The JavaScript to display the submit button: -->
+
+<script type="text/javascript" language="JavaScript">
+//<!--
+
+document.write('<input type="button" name="mybutton" value="Click When Ready" onclick="return SubmitTheForm();">');
+
+//--></script>
+
+<!-- Optionally, if you want to allow non-JavaScript
+browsers to submit the form, add the following three lines: -->
+
+<noscript>
+
+<input type="submit" value="Click When Ready">
+
+</noscript>
+</form>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+    <link rel="shortcut icon" href="http://www.kaazing.com/images/favicon.ico" />
+    <link rel="stylesheet" href="resources/css/demo.css" />
+
+    <title>Kaazing - Server-sent Events Demonstration</title>
+
+    <script src="/html5/ServerSentEvents.js"></script>
+    <script>
+    	var testStr, count=0;
+        function setup() {
+            // Add in an <eventsource> to the DOM
+            var events = document.createElement("eventsource");
+            document.body.appendChild(events);
+
+            var url = document.getElementById("url");
+            var connect = document.getElementById("connect");
+            var disconnect = document.getElementById("disconnect");
+            var data = document.getElementById("data");
+
+            connect.onclick = function() {
+                events.addEventSource(url.value);
+            }
+            disconnect.onclick = function() {
+                events.removeEventSource(url.value);
+            }
+            events.addEventListener("message", function(event) {
+                //var div = document.createElement("div");
+                //div.innerHTML = event.data;
+                //var now = new Date();
+               // testStr = now.toUTCString();
+               if ( count === 0 )                {
+                document.getElementById("showinfo").setAttribute("value","1234");
+                count = 1;
+              }
+                else {
+                	document.getElementById("showinfo").setAttribute("value","4321");
+                	count = 0;
+                }
+                //alert(testStr);
+                //div.innerHTML = testStr;
+                //data.insertBefore(div, data.firstChild);
+                /*
+                while (data.childNodes.length > 10)
+                {
+                  data.removeChild(data.lastChild);
+                }*/
+            }, false);
+
+            // detect explicit host:port authority
+            var authority = location.host;
+            if (location.search) {
+                authority = location.search.slice(1) + "." + authority;
+            }
+            else {
+                var parts = authority.split(':');
+                var ports = { http:'80', https:'443' };
+                authority = parts[0] + ':' + (parseInt(parts[1] || ports[location.protocol]) + 3);
+            }
+
+            // default the location
+            url.value = location.protocol + "//" + authority + "/sse";
+        }
+    </script>
+</head>
+
+
+<body onload="setup()" >
+    <div id="overall_frame">
+        <div id="sidebar"></div>
+        <div id="wrapper">
+
+            <div id="header">
+                <div id="menu">
+                    <a href="index.html">Demos:</a>
+                    <a href="stomp.html">JavaScript Stomp</a>
+                    <a href="stock.html">Stock Trading</a>
+                    <a href="xmpp.html">XMPP Chat</a>
+                    <a href="sse.html">Server-Sent Events</a>
+                    <a href="postMessage.html">PostMessage</a>
+                </div>
+            </div>
+            <div>
+                <div id="content">
+                    <div id="main">
+                        <h4>Server-Sent Events Demonstration</h4>
+                        <span class="info">This demo illustrates how Server-Sent Events can be used to stream one-way
+                        data from a server to a browser. To view this demo, the Kaazing Gateway, and the "udp.start"
+                        script must all be running. Start the flow of articles by using the "Connect" button below. Refer to
+                        the <a href="../documentation/getting-started.html">Getting Started Guide</a> for more information.</span>
+
+                        <div>
+                            <label>Location</label><input id="url" size="50" >
+                            <br>
+                            <button id="connect">Connect</button>
+                            <button id="disconnect">Disconnect</button>
+                            <br>
+                            <label>Data</label>
+                            <input id="showinfo" value="default"/>
+                            <div id="data" style="height: 400px; overflow: auto"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

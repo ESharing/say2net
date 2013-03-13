@@ -1,0 +1,290 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta name="generator"
+          content="JS Editor v9, http://www.c-point.com" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="../yui/build/fonts/fonts-min.css" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="../yui/build/paginator/assets/skins/sam/paginator.css" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="../yui/build/button/assets/skins/sam/button.css" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="../yui/build/datatable/assets/skins/sam/datatable.css" />
+<script type="text/javascript"
+      src="../yui/build/yahoo-dom-event/yahoo-dom-event.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../yui/build/element/element-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../yui/build/paginator/paginator-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../yui/build/button/button-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../yui/build/dragdrop/dragdrop-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../yui/build/datasource/datasource-min.js"
+      xml:space="preserve">
+</script>
+<script type="text/javascript"
+      src="../yui/build/datatable/datatable-min.js"
+      xml:space="preserve">
+</script>
+<style type="text/css"
+       xml:space="preserve">
+/*<![CDATA[*/
+/* Class for marked rows */
+.yui-skin-sam .yui-dt tr.mark,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark td.yui-dt-desc {
+    background-color: red;
+    color: black;
+}
+
+.yui-skin-sam .yui-dt tr.mark2,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-asc,
+.yui-skin-sam .yui-dt tr.mark2 td.yui-dt-desc {
+    background-color: yellow;
+    color: black;
+}
+/*]]>*/
+</style>
+
+    <title>test</title>
+    <!--link rel="stylesheet" href="resources/css/demo.css"-->
+<!--  Kaazing scripts -->
+<script src="/html5/ByteSocket.js"
+      type="text/javascript"
+      xml:space="preserve">
+</script>
+<script src="/protocol/StompClient.js"
+      type="text/javascript"
+      xml:space="preserve">
+</script>
+</head>
+
+<body class="yui-skin-sam">
+    <div id="alarmTable"></div>
+    <br />
+    <div>
+        <button id="connect">Connect</button> 
+		<button id="disconnect">Disconnect</button> 
+        <input type="radio" id = "monitor_realtime" name="monitorStyle" checked="checked" /> Realtime 
+		<input type="radio" id="monitor_1min" name="monitorStyle" /> 1Min Hold
+    </div>
+	
+	
+<script type="text/javascript">
+
+var Dom = YAHOO.util.Dom;
+var Event = YAHOO.util.Event;
+markRecs1 = {};
+markRecs2 = {};
+markRecs3 = {};
+markRecs4 = {};
+
+var CYCLETIME = 5000;
+var MAXRECORDNUM = 1000;
+var cycleTimer;
+var cycleTimerOn = false;
+var cycleShowRadio, realtimeRadio;
+var records;
+var currentNum = 0;
+
+cycleShowRadio = document.getElementById("monitor_1min");
+realtimeRadio = document.getElementById("monitor_realtime");
+records = new Array();
+
+//allocate the max records size
+for(var i=0; i<MAXRECORDNUM; i++) {
+	records[i] = new Array(3);
+}
+
+//////YUI Table
+var myColumnDefs = [
+    //{key:"row", label:"row counter", resizeable:true,sortable:true},
+    {key:"Comp",resizeable:true, sortable:true},
+    {key:"Abbr",resizeable:true, sortable:true},
+    {key:"Price",resizeable:true, sortable:true, formatter: 'rowMarker'}   
+];
+var globalDataCount=1;
+var myDataSource = new YAHOO.util.DataSource([]);
+myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSARRAY;
+myDataSource.responseSchema = {
+    fields: ["Comp","Abbr","Price"]
+};
+
+var oConfigs = { 
+        paginator: new YAHOO.widget.Paginator({ 
+            rowsPerPage: 20
+        })          }; 
+
+var myDataTable = new YAHOO.widget.DataTable("alarmTable",
+        myColumnDefs, myDataSource, oConfigs);          
+
+//////
+
+function cycleShow() {
+	// display the stored records
+	for(var i=0;i<currentNum;i++)
+	{
+		var company = records[i]["company"];
+		var ticker = records[i]["ticker"];
+		var price = records[i]["price"];
+		
+		myDataTable.addRow({Comp:company, Abbr:ticker, Price:price}, 0 );  	
+	}
+
+
+	//the last
+	currentNum = 0;
+	cycleTimer = setTimeout("cycleShow()", CYCLETIME);
+}
+
+cycleShowRadio.onclick = function() {
+	if (cycleShowRadio.checked) {
+		if(!cycleTimerOn) {
+			cycleTimerOn = true;
+			cycleShow();
+		}
+	}
+	else {
+		cycleTimerOn = false;
+		clearTimeout(cycleTimer);
+	}
+}
+
+
+var stockRowIndexes = {};
+
+var stomp = new StompClient();
+
+stomp.onopen = function(headers) {
+    stomp.subscribe("/topic/stock", null);
+}
+
+stomp.onreceipt = function(headers) { }
+
+
+var debugCount=1;
+
+stomp.onmessage = function(headers, body) {
+
+var fields = body.split(':');
+var company = fields[0];
+var ticker  = fields[1];
+var price   = fields[2];
+	
+if(cycleShowRadio.checked) {
+	records[currentNum]["company"] = company;
+	records[currentNum]["ticker"] = ticker;
+	records[currentNum]["price"] = price;
+	currentNum ++;
+}else {
+	myDataTable.addRow({Comp:company, Abbr:ticker, Price:price}, 0 ); 
+}
+  
+/*
+  // lookup the table row
+  var stockRowIndex = stockRowIndexes[ticker];      
+    
+if ( stockRowIndex === undefined || stockRowIndex === -1 ) {      // raised alarm
+//              stockRowIndex = myDataTable.getRecordSet().getLength();
+    myDataTable.addRow({Comp:company, Abbr:ticker, Price:price}, 0 );                     
+
+    stockRowIndexes[ticker] = myDataTable.getRecord(0).getId();
+    }
+else { // raised clear alarm
+    myDataTable.deleteRow(stockRowIndex);           
+    stockRowIndexes[ticker] = -1;
+	}
+*/
+}
+
+// row color make start
+
+// Create a custom function to store the records needing row coloring
+YAHOO.widget.DataTable.Formatter.rowMarker = function (cell,rec,col,data) {
+    if (data < 40 ) {
+        // In object hash to prevent duplication
+        markRecs1[rec.getId()] = rec;
+    }   
+    if (data >= 40 && data < 60 ) {
+        markRecs2[rec.getId()] = rec;
+    }    
+    if (data >=60 && data < 80) {
+        markRecs3[rec.getId()] = rec;
+    }
+    if (data >= 80 ) {
+        markRecs4[rec.getId()] = rec;
+    }
+    
+    cell.innerHTML = data;
+};
+
+// Function to add the color class to rows
+updateMarks = function () {
+    // Clear mark class off all rows
+    Dom.removeClass(Dom.getElementsByClassName('mark','tr','alarmTable'), 'mark');
+
+    // Apply mark class to identified rows
+    for (var recKey in markRecs1) {
+        if (YAHOO.lang.hasOwnProperty(markRecs1, recKey)) {
+            Dom.addClass(myDataTable.getTrEl(markRecs1[recKey]), 'mark');
+        }
+    }
+    for (var recKey in markRecs2) {
+        if (YAHOO.lang.hasOwnProperty(markRecs2, recKey)) {
+            Dom.addClass(myDataTable.getTrEl(markRecs2[recKey]), 'mark2');
+        }
+    }    
+};
+
+// Set row colors initially
+updateMarks();
+
+// Add the class to the rows on renderEvent
+myDataTable.subscribe('renderEvent', updateMarks);            
+
+// row color make end
+
+stomp.onerror = function(headers, body) {}
+stomp.onclosed = function(headers) {}
+
+var url = document.getElementById("url");
+var connect = document.getElementById("connect");
+var disconnect = document.getElementById("disconnect");
+
+connect.onclick = function() {
+//alert(url.value + "|" + username.value + "|" + password.value);
+    //stomp.connect(url.value, {username:username.value, password:password.value});
+    stomp.connect("ws://localhost:8001/activemq", {username:null, password:null});  
+}
+
+disconnect.onclick = function() {
+    stomp.disconnect();
+}
+
+</script>
+	
+</body>
+</html>

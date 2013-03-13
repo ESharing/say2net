@@ -1,0 +1,89 @@
+<!--
+
+    The contents of this file are subject to the Common Public Attribution 
+    License Version 1.0 (the "License"); you may not use this file except 
+    in compliance with the License. You may obtain a copy of the License 
+    at http://www.kaazing.org/CPAL.
+    
+    The License is based on the Mozilla Public License Version 1.1 but 
+    Sections 14 and 15 have been added to cover use of software over a 
+    computer network and provide for limited attribution for the Original 
+    Developer.
+    
+    In addition, Exhibit A has been modified to be consistent with Exhibit B.
+    
+    Software distributed under the License is distributed on an "AS IS" 
+    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See 
+    the License for the specific language governing rights and limitations 
+    under the License.
+    
+    The Original Code is Kaazing Gateway. The Initial Developer of the 
+    Original Code is Kaazing Corporation.
+     
+    All portions of the code written by Kaazing Corporation are 
+    Copyright (c) 2007-2009 Kaazing Corporation. All Rights Reserved.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+	<link rel="shortcut icon" href="http://www.kaazing.com/images/favicon.ico" />
+	<title>Kaazing - Stomp Client Demonstration Instructions</title>
+
+	<style type="text/css">
+	@import url("/demo/resources/css/demo.css");
+	</style>
+</head>
+<body>
+
+<div id="overall_frame">
+<div id="sidebar">
+</div>
+<div id="wrapper">
+
+	<div id="header">
+        <div id="menu">
+                <a href="index.html">Demo Home</a>
+                <a href="stomp.html">JavaScript Stomp Client</a>
+                <a href="stock.html">Stock Trading Matrix</a>
+                <a href="xmpp.html">XMPP Chat Client</a>
+        </div>
+    </div>
+
+	<div id="content">
+		<div id="main">
+			<div id="main_header">
+        	<h4>Instructions for the Stomp Demo</h4>
+            <p>This is a simple Stomp demo that illustrates the use of the Kaazing Gateway, Apache ActiveMQ, HTML 5 Web sockets and Server-sent events, and an API-specific JavaScript library implementation of the Stomp protocol. The demo consists of three sections - Login, Subscribe, and Transaction.</p>
+              <span class="note"><strong>Note</strong>: You must have Apache ActiveMQ running in order for this demo to work. Refer to
+               the <a href="../documentation/getting-started.html">Getting Started Guide</a> for instructions on how to get Apache ActiveMQ up and running.</span>
+			   <ul class="arrow-2">
+               <li>Use the first section to log in and connect to a specific service. The demo is configured to use an
+               Apache ActiveMQ instance. A user name and password are not required for this demo. The location field indicates
+               the  URI that the Kaazing Gateway has been configured to listen on. For example
+                 <code>ws://localhost:8000/activemq</code>. The Kaazing Gateway is designed to
+               support the HTML 5 WebSocket (<code>ws://</code>) scheme. For more information on how to configure
+               Kaazing Gateway, refer to the <a href="../documentation/getting-started.html">Getting Started Guide</a>.</li>
+               <li>Use the second section to subscribe to a destination or topic, and then send messages to
+               this destination. All clients that are subscribed to the same destination will receive these messages, and you can
+               see theirs. You can launch as second browser to see this in action.</li>
+               <li>Use the third section  for transactions. You can begin a transaction, send messages to that
+               particular transaction and destination. No messages will be broadcasted until you click Commit.
+               Alternatively you can  abort the transaction in which case no messages will be broadcasted.</li>
+
+               <span class="note">If you want to see messages sent using a transaction you must first subscribe to the
+               destination shown in the destination field for transactions.</span>
+               </ul>
+            <a name="error"></a><h5>Error Messages</h5>
+            <p>If you receive Java exceptions in the message window, don't worry. In many cases this happens when you click Commit or Abort button when there is nothing to commit or abort.
+            This causes Apache ActiveMQ to throw an exception. The exception is then sent to
+            the Stomp client, which will display the error in the message window.</p>
+            <p>&nbsp;</p>
+		  </div>
+		</div>
+    </div>
+</body>
+</html>
